@@ -324,7 +324,7 @@
     <h2>Let's make something</h2>
     <p>Tell us about your business and what you need. We'll reply with a plain-language plan and a firm price — usually within one business day.</p>
 
-    <form class="cform" id="cform" action="https://formspree.io/f/meebgkjn" method="POST">
+    <form class="cform" id="cform" action="https://script.google.com/macros/s/AKfycbyWl6cY7oxhrilE4OyuVXJBHgWMfBEu2exGJnEiWzNkVbAPRAIep7RjQwnhTd5mvdHD/exec" method="POST">
       <div class="field">
         <label for="cf-name">Your name</label>
         <input type="text" id="cf-name" name="name" required autocomplete="name">
@@ -334,6 +334,10 @@
         <input type="email" id="cf-email" name="email" required autocomplete="email">
       </div>
       <div class="field">
+        <label for="cf-phone">Phone number</label>
+        <input type="tel" id="cf-phone" name="phone" required autocomplete="tel" placeholder="716-555-1234">
+      </div>
+      <div class="field">
         <label for="cf-biz">Business or organization <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
         <input type="text" id="cf-biz" name="business" autocomplete="organization">
       </div>
@@ -341,7 +345,9 @@
         <label for="cf-msg">What do you need?</label>
         <textarea id="cf-msg" name="message" required placeholder="A promo video for our fall event, a few branded images, a full launch package…"></textarea>
       </div>
-      <input type="hidden" name="_subject" value="New inquiry — Origyn Creative Studio">
+      <input type="hidden" name="source" value="Origyn Website">
+      <input type="hidden" name="status" value="New Lead">
+      <input type="hidden" name="submittedAt" id="cf-submitted-at" value="">
       <button type="submit" class="btn btn-solid" id="cf-submit">Send inquiry</button>
       <p class="cform-note" id="cf-note" role="status" aria-live="polite"></p>
     </form>
@@ -349,7 +355,7 @@
     <div class="or-line">or reach us directly</div>
     <p class="contact-meta">
       <a href="mailto:origyncreativestudio@gmail.com">origyncreativestudio@gmail.com</a> · <a href="tel:+17162998525">716-299-8525</a><br>
-      Serving the Greater Niagara Falls, NY region<br>Call or Text us anytime.
+      Serving the Greater Niagara Falls, NY region<br>Call or text: 716-299-8525
     </p>
   </div>
 </section>
@@ -603,39 +609,42 @@
     });
   });
 
-  /* ----- contact form (Formspree AJAX) ----- */
+  /* ----- contact form (Origyn Google Apps Script) ----- */
   var cform = document.getElementById('cform');
   var cnote = document.getElementById('cf-note');
   var csubmit = document.getElementById('cf-submit');
+  var csubmittedAt = document.getElementById('cf-submitted-at');
+
   if (cform){
     cform.addEventListener('submit', function(e){
       e.preventDefault();
+
       cnote.className = 'cform-note';
       cnote.textContent = 'Sending…';
       csubmit.disabled = true;
+
+      if (csubmittedAt) {
+        csubmittedAt.value = new Date().toISOString();
+      }
+
       var data = new FormData(cform);
+      var body = new URLSearchParams();
+      data.forEach(function(value, key){
+        body.append(key, value);
+      });
+
       fetch(cform.action, {
         method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      }).then(function(res){
-        if (res.ok){
-          cform.reset();
-          cnote.className = 'cform-note ok';
-          cnote.textContent = 'Thank you — your message is on its way. We\u2019ll reply within one business day.';
-        } else {
-          res.json().then(function(d){
-            cnote.className = 'cform-note err';
-            cnote.textContent = (d && d.errors) ? d.errors.map(function(x){return x.message;}).join(', ')
-              : 'Something went wrong. Please email origyncreativestudio@gmail.com instead.';
-          }).catch(function(){
-            cnote.className = 'cform-note err';
-            cnote.textContent = 'Something went wrong. Please email origyncreativestudio@gmail.com instead.';
-          });
-        }
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: body.toString()
+      }).then(function(){
+        cform.reset();
+        cnote.className = 'cform-note ok';
+        cnote.textContent = 'Thank you! Your message has been received. We’ll contact you within one business day.';
       }).catch(function(){
         cnote.className = 'cform-note err';
-        cnote.textContent = 'Network error. Please email origyncreativestudio@gmail.com instead.';
+        cnote.textContent = 'Something went wrong. Please call or text 716-299-8525, or email origyncreativestudio@gmail.com.';
       }).finally(function(){
         csubmit.disabled = false;
       });
